@@ -5,18 +5,33 @@ function log(m) {
   document.documentElement.appendChild(document.createElement('div'))
           .appendChild(document.createTextNode(m));
 }
+var pass = 0, fail = 0;
+function assert(t, m) {
+  if (t) {
+    ++pass;
+  } else {
+    ++fail;
+    log(m);
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  log('Assertions Passed: ' + pass);
+  log('Assertions Failed: ' + fail);
+});
 
 function equal(a, b, m) {
-  if (a === b) return;
-  log((m ? (m + ' ====> ') : '') +
-      'Expected ' + String(a) + ' == ' + String(b));
+  assert(a === b, // Not Object.is, because we want 0 === -0
+         (m ? (m + ' ====> ') : '') +
+         'Expected ' + String(a) + ' == ' + String(b));;
 }
 
-function throws(f) {
+function throws(f, m) {
   try {
     f();
-    log('Expected to throw, did not');
-  } catch (_) {}
+    assert(false, 'Expected to throw, did not: ' + m);
+  } catch (_) {
+    assert(true);
+  }
  }
 
 // 7 Int64 Objects
@@ -24,9 +39,9 @@ function throws(f) {
 (function() {
 
   function i64equal(a, b, m) {
-    if (Int64.compare(a, b) === 0) return;
-    log((m ? (m + ' ====> ') : '') +
-        'Expected i64 ' + a.toString(16) + ' == i64 ' + b.toString(16));
+    assert(Int64.compare(a, b) === 0,
+           (m ? (m + ' ====> ') : '') +
+           'Expected i64 ' + a.toString(16) + ' == i64 ' + b.toString(16));
   }
 
   var cases = [0, 1, 1234, 0x12345678, 0xffffffff, 0x12345678abcd];
@@ -69,10 +84,10 @@ function throws(f) {
   });});
   equal(Number(Int64.mul(new Int64(0), new Int64(1))), 0);
   equal(Number(Int64.mul(new Int64(1), new Int64(0))), 0);
-  throws(function() { Int64.div(new Int64(0), new Int64(0)); });
-  throws(function() { Int64.div(new Int64(1), new Int64(0)); });
-  throws(function() { Int64.mod(new Int64(0), new Int64(0)); });
-  throws(function() { Int64.mod(new Int64(1), new Int64(0)); });
+  throws(function() { Int64.div(new Int64(0), new Int64(0)); }, 'division by zero');
+  throws(function() { Int64.div(new Int64(1), new Int64(0)); }, 'division by zero');
+  throws(function() { Int64.mod(new Int64(0), new Int64(0)); }, 'division by zero');
+  throws(function() { Int64.mod(new Int64(1), new Int64(0)); }, 'division by zero');
   // TODO: mul/div/mod overflow cases
 
   // 7.2.8 Int64.neg( a )
@@ -172,9 +187,9 @@ function throws(f) {
 // 8 Uint64 Objects
 (function() {
   function u64equal(a, b, m) {
-    if (Uint64.compare(a, b) === 0) return;
-    log((m ? (m + ' ====> ') : '') +
-        'Expected u64 ' + a.toString(16) + ' == u64 ' + b.toString(16));
+    assert(Uint64.compare(a, b) === 0,
+           (m ? (m + ' ====> ') : '') +
+           'Expected u64 ' + a.toString(16) + ' == u64 ' + b.toString(16));
   }
 
   var cases = [0, 1, 1234, 0x12345678, 0xffffffff, 0x12345678abcd];
@@ -213,10 +228,10 @@ function throws(f) {
   });});
   equal(Number(Uint64.mul(new Uint64(0), new Uint64(1))), 0);
   equal(Number(Uint64.mul(new Uint64(1), new Uint64(0))), 0);
-  throws(function() { Uint64.div(new Uint64(0), new Uint64(0)); });
-  throws(function() { Uint64.div(new Uint64(1), new Uint64(0)); });
-  throws(function() { Uint64.mod(new Uint64(0), new Uint64(0)); });
-  throws(function() { Uint64.mod(new Uint64(1), new Uint64(0)); });
+  throws(function() { Uint64.div(new Uint64(0), new Uint64(0)); }, 'division by zero');
+  throws(function() { Uint64.div(new Uint64(1), new Uint64(0)); }, 'division by zero');
+  throws(function() { Uint64.mod(new Uint64(0), new Uint64(0)); }, 'division by zero');
+  throws(function() { Uint64.mod(new Uint64(1), new Uint64(0)); }, 'division by zero');
   // TODO: mul/div/mod overflow cases
 
   var u0000 = Uint64.combine(0x00000000, 0x00000000);
