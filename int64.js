@@ -19,6 +19,9 @@
   // i-prefix = inputs treated as signed
   // u-prefix = inputs treated as unsigned (or n/a)
 
+  var uZERO = {lo: 0, hi: 0};
+  var uONE = {lo: 1, hi: 0};
+
   // signed compare; a < b => -1, a == b => 0, a > b => 1
   function icmp(a, b) {
     var a0 = a.lo >>> 0, a1 = a.hi | 0;
@@ -158,10 +161,10 @@
 
   // returns {lo, hi}
   function ToInt64(arg) {
-    if (Object(arg) === arg)
-      arg = Number(arg);
     if (arg instanceof Int64 || arg instanceof Uint64)
       return arg;
+    if (Object(arg) === arg)
+      arg = Number(arg);
     if (typeof arg === 'number') {
       if (arg === 0 || !isFinite(arg))
         return {lo:0, hi:0};
@@ -185,10 +188,10 @@
 
   // returns {lo, hi}
   function ToUint64(arg) {
-    if (Object(arg) === arg)
-      arg = Number(arg);
     if (arg instanceof Uint64 || arg instanceof Int64)
       return arg;
+    if (Object(arg) === arg)
+      arg = Number(arg);
     if (typeof arg === 'number') {
       if (arg === 0 || !isFinite(arg))
         return {lo:0, hi:0};
@@ -252,9 +255,6 @@
     return ((n.hi>>>0) * POW2_32) + (n.lo >>> 0);
   }
 
-  var iZERO = makeInt64(0, 0);
-  var iONE = makeInt64(1, 0);
-
   // 7.2 Properties of the Int64 constructor
 
   // 7.2.1 Int64.MAX_VALUE
@@ -295,8 +295,8 @@
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
 
-    if (ueq(a, iZERO) || ueq(b, iZERO))
-      return iZERO;
+    if (ueq(a, uZERO) || ueq(b, uZERO))
+      return makeInt64(0, 0);
 
     // TODO: Handle MIN_VALUE which can't be negated
     var an = ilt0(a), bn = ilt0(b);
@@ -315,7 +315,7 @@
 
     // SPEC ISSUE: Definition for division by zero?
     // https://github.com/littledan/value-spec/issues/26
-    if (ueq(b, iZERO)) throw RangeError('Division by zero');
+    if (ueq(b, uZERO)) throw RangeError('Division by zero');
 
     // TODO: Handle MIN_VALUE which can't be negated
     var an = ilt0(a), bn = ilt0(b);
@@ -334,7 +334,7 @@
 
     // SPEC ISSUE: Definition for division by zero?
     // https://github.com/littledan/value-spec/issues/26
-    if (ueq(b, iZERO)) throw RangeError('Division by zero');
+    if (ueq(b, uZERO)) throw RangeError('Division by zero');
 
     // TODO: Handle MIN_VALUE which can't be negated
     var an = ilt0(a), bn = ilt0(b);
@@ -437,7 +437,7 @@
   // 7.2.20 Int64.abs( a )
   Int64.abs = function abs(a) {
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
-    if (icmp(a, iZERO) < 0 && icmp(a, Int64.MIN_VALUE) !== 0)
+    if (ilt0(a) && !ueq(a, Int64.MIN_VALUE))
       return Int64.neg(a);
     return a;
   };
@@ -478,8 +478,7 @@
   // 7.3.1 Int64.prototype.valueOf()
   Int64.prototype.valueOf = function valueOf() {
     // non-standard, for debugging
-    console.warn('valueOf() called on Int64');
-    throw Error();
+    throw Error('valueOf() called on Int64');
   };
 
   // 7.3.2 Int64.prototype.toLocaleString( [ reserved1 [ , reserved2 ] ])
@@ -546,9 +545,6 @@
     return hi * POW2_32 + lo;
   }
 
-  var uZERO = makeUint64(0, 0);
-  var uONE = makeUint64(1, 0);
-
   // 8.2 Properties of the Uint64 constructor
 
   // 8.2.1 Uint64.MAX_VALUE
@@ -597,7 +593,7 @@
 
     // SPEC ISSUE: Definition for division by zero?
     // https://github.com/littledan/value-spec/issues/26
-    if (ueq(b, iZERO)) throw RangeError('Division by zero');
+    if (ueq(b, uZERO)) throw RangeError('Division by zero');
 
     var c = udivrem(a, b).quotient;
     return makeUint64(c.lo, c.hi);
@@ -609,7 +605,7 @@
 
     // SPEC ISSUE: Definition for division by zero?
     // https://github.com/littledan/value-spec/issues/26
-    if (ueq(b, iZERO)) throw RangeError('Division by zero');
+    if (ueq(b, uZERO)) throw RangeError('Division by zero');
 
     var c = udivrem(a, b).remainder;
     return makeUint64(c.lo, c.hi);
@@ -734,8 +730,7 @@
   // 8.3.1 Uint64.prototype.valueOf()
   Uint64.prototype.valueOf = function valueOf() {
     // non-standard, for debugging
-    console.warn('valueOf() called on Uint64');
-    throw Error();
+    throw Error('valueOf() called on Uint64');
   };
 
   // 8.3.2 Uint64.prototype.toLocaleString( [ reserved1 [ , reserved2 ] ])
