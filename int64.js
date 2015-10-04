@@ -205,14 +205,16 @@
 
   // 7.2.3 Int64.add( a, b )
   Int64.add = function add(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
     var c = uadd(a, b);
     return makeInt64(c.lo, c.hi);
   };
 
   // 7.2.4 Int64.sub( a, b )
   Int64.sub = function sub(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
     var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
     var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
 
@@ -224,7 +226,8 @@
 
   // 7.2.5 Int64.mul( a, b )
   Int64.mul = function mul(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
 
     if (eq(a, iZERO) || eq(b, iZERO))
       return iZERO;
@@ -241,7 +244,8 @@
 
   // 7.2.6 Int64.div( a, b )
   Int64.div = function div(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
 
     // SPEC ISSUE: Definition for division by zero?
     if (eq(b, iZERO)) throw RangeError('Division by zero');
@@ -258,7 +262,8 @@
 
   // 7.2.7 Int64.mod( a, b )
   Int64.mod = function mod(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
 
     // SPEC ISSUE: Definition for division by zero?
     if (eq(b, iZERO)) throw RangeError('Division by zero');
@@ -275,7 +280,7 @@
 
   // 7.2.8 Int64.neg( a )
   Int64.neg = function neg(a) {
-    if (!(a instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (icmp(a, Int64.MIN_VALUE) === 0) return a;
     var n = negate(a);
     return makeInt64(n.lo, n.hi);
@@ -283,81 +288,87 @@
 
   // 7.2.9 Int64.not( a )
   Int64.not = function not(a) {
-    if (!(a instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     return makeInt64(~a.lo, ~a.hi);
   };
 
   // 7.2.10 Int64.and( a, b )
   Int64.and = function and(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     return makeInt64(a.lo & b.lo, a.hi & b.hi);
   };
 
   // 7.2.11 Int64.or( a, b )
   Int64.or = function or(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     return makeInt64(a.lo | b.lo, a.hi | b.hi);
   };
 
   // 7.2.12 Int64.xor( a, b )
   Int64.xor = function xor(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     return makeInt64(a.lo ^ b.lo, a.hi ^ b.hi);
   };
 
   // 7.2.13 Int64.greaterThan( a, b )
   Int64.greaterThan = function greaterThan(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     return icmp(a, b) > 0;
   };
 
   // 7.2.14 Int64.lessThan( a, b )
   Int64.lessThan = function lessThan(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
     return icmp(a, b) < 0;
   };
 
   // 7.2.15 Int64.greaterThanOrEqual( a, b )
   Int64.greaterThanOrEqual = function greaterThanOrEqual(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
     return icmp(a, b) >= 0;
   };
 
   // 7.2.16 Int64.lessThanOrEqual( a, b )
   Int64.lessThanOrEqual = function lessThanOrEqual(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
     return icmp(a, b) <= 0;
   };
 
   // 7.2.17 Int64.compare( a, b )
   Int64.compare = function compare(a, b) {
-    if (!(a instanceof Int64 && b instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
+    if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
     return icmp(a, b);
   };
 
   // 7.2.18 Int64.min( values... )
   Int64.min = function min(values, _) {
-    values = Array.from(arguments);
-    if (!values.every(function(v) { return v instanceof Int64; })) throw TypeError();
+    for (var i = 0; i < arguments.length; ++i)
+      if (!(arguments[i] instanceof Int64)) throw TypeError(arguments[i] + ' is not an Int64');
 
-    return values.reduce(function(a, b) {
-      return icmp(a, b) < 0 ? a : b;
-    }, Int64.MAX_VALUE);
+    var c = Int64.MAX_VALUE;
+    for (i = 0; i < arguments.length; ++i)
+      if (icmp(arguments[i], c) < 0) c = arguments[i];
+    return c;
   };
 
   // 7.2.19 Int64.max( values... )
   Int64.max = function min(values, _) {
-    values = Array.from(arguments);
-    if (!values.every(function(v) { return v instanceof Int64; })) throw TypeError();
+    for (var i = 0; i < arguments.length; ++i)
+      if (!(arguments[i] instanceof Int64)) throw TypeError(arguments[i] + ' is not an Int64');
 
-    return values.reduce(function(a, b) {
-      return icmp(a, b) > 0 ? a : b;
-    }, Int64.MIN_VALUE);
+    var c = Int64.MIN_VALUE;
+    for (i = 0; i < arguments.length; ++i)
+      if (icmp(arguments[i], c) > 0) c = arguments[i];
+    return c;
   };
 
   // 7.2.20 Int64.abs( a )
   Int64.abs = function abs(a) {
-    if (!(a instanceof Int64)) throw TypeError();
+    if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (icmp(a, iZERO) < 0 && icmp(a, Int64.MIN_VALUE) !== 0)
       return Int64.neg(a);
     return a;
@@ -370,7 +381,7 @@
 
   // 7.2.22 Int64.shiftLeft( value, shifter )
   Int64.shiftLeft = function shiftLeft(value, shifter) {
-    if (!(value instanceof Int64)) throw TypeError();
+    if (!(value instanceof Int64)) throw TypeError(value + ' is not an Int64');
     var shiftValue = shifter >>> 0;
     var shiftCount = shifter % 64;
 
@@ -386,7 +397,7 @@
 
   // 7.2.23 Int64.shiftRightArithmetic( value, shifter )
   Int64.shiftRightArithmetic = function shiftRightArithmetic(value, shifter) {
-    if (!(value instanceof Int64)) throw TypeError();
+    if (!(value instanceof Int64)) throw TypeError(value + ' is not an Int64');
     var shiftValue = shifter >>> 0;
     var shiftCount = shifter % 64;
 
@@ -498,7 +509,8 @@
 
   // 8.2.3 Uint64.add( a, b )
   Uint64.add = function add(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
+    if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
     var c = uadd(a, b);
     return makeUint64(c.lo, c.hi);
   };
@@ -506,21 +518,24 @@
   // "Other function properties of Int64 are added analogously, through compare."
 
   Uint64.sub = function sub(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
+    if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
     var c = usub(a, b);
     return makeUint64(c.lo, c.hi);
   };
 
   // 7.2.5 Uint64.mul( a, b )
   Uint64.mul = function mul(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
+    if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
 
     var c = umul(a, b);
     return makeUint64(c.lo, c.hi);
   };
 
   Uint64.div = function div(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
+    if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
 
     // SPEC ISSUE: Definition for division by zero?
     if (eq(b, iZERO)) throw RangeError('Division by zero');
@@ -530,7 +545,8 @@
   };
 
   Uint64.mod = function mod(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
+    if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
 
     // SPEC ISSUE: Definition for division by zero?
     if (eq(b, iZERO)) throw RangeError('Division by zero');
@@ -542,69 +558,72 @@
   // SPEC ISSUE: neg doesn't make sense for Uint64
 
   Uint64.not = function not(a) {
-    if (!(a instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return makeUint64(~a.lo, ~a.hi);
   };
 
   Uint64.and = function and(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return makeUint64(a.lo & b.lo, a.hi & b.hi);
   };
 
   Uint64.or = function or(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return makeUint64(a.lo | b.lo, a.hi | b.hi);
   };
 
   Uint64.xor = function xor(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return makeUint64(a.lo ^ b.lo, a.hi ^ b.hi);
   };
 
   Uint64.greaterThan = function greaterThan(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return ucmp(a, b) > 0;
   };
 
   Uint64.lessThan = function lessThan(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return ucmp(a, b) < 0;
   };
 
   Uint64.greaterThanOrEqual = function greaterThanOrEqual(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return ucmp(a, b) >= 0;
   };
 
   Uint64.lessThanOrEqual = function lessThanOrEqual(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     return ucmp(a, b) <= 0;
   };
 
   Uint64.compare = function compare(a, b) {
-    if (!(a instanceof Uint64 && b instanceof Uint64)) throw TypeError();
+    if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
+    if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
     return ucmp(a, b);
   };
 
   // 8.2.4 Uint64.min( values... )
   Uint64.min = function min(values, _) {
-    values = Array.from(arguments);
-    if (!values.every(function(v) { return v instanceof Uint64; })) throw TypeError();
+    for (var i = 0; i < arguments.length; ++i)
+      if (!(arguments[i] instanceof Uint64)) throw TypeError(arguments[i] + ' is not an Uint64');
 
-    return values.reduce(function(a, b) {
-      return ucmp(a, b) < 0 ? a : b;
-    }, Uint64.MAX_VALUE);
+    var c = Uint64.MAX_VALUE;
+    for (i = 0; i < arguments.length; ++i)
+      if (ucmp(arguments[i], c) < 0) c = arguments[i];
+    return c;
     // SPEC ISSUE: "return the largest Int64 value"
   };
 
   // 8.2.5 Uint64.max( values... )
   Uint64.max = function min(values, _) {
-    values = Array.from(arguments);
-    if (!values.every(function(v) { return v instanceof Uint64; })) throw TypeError();
+    for (var i = 0; i < arguments.length; ++i)
+      if (!(arguments[i] instanceof Uint64)) throw TypeError(arguments[i] + ' is not an Uint64');
 
-    return values.reduce(function(a, b) {
-      return ucmp(a, b) > 0 ? a : b;
-    }, Uint64.MIN_VALUE);
+    var c = Uint64.MIN_VALUE;
+    for (i = 0; i < arguments.length; ++i)
+      if (ucmp(arguments[i], c) > 0) c = arguments[i];
+    return c;
     // SPEC ISSUE: "return the smallest Int64 value"
   };
 
@@ -616,7 +635,7 @@
 
   // 8.2.7 Uint64.shiftLeft( value, shifter )
   Uint64.shiftLeft = function shiftLeft(value, shifter) {
-    if (!(value instanceof Uint64)) throw TypeError();
+    if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
     var shiftValue = shifter >>> 0;
     var shiftCount = shifter % 64;
 
@@ -632,7 +651,7 @@
 
   // 8.2.8 Uint64.shiftRightLogical( value, shifter )
   Uint64.shiftRightLogical = function shiftRightLogical(value, shifter) {
-    if (!(value instanceof Uint64)) throw TypeError();
+    if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
     var shiftValue = shifter >>> 0;
     var shiftCount = shifter % 64;
 
@@ -648,7 +667,7 @@
 
   // 8.2.9 Uint64.clz( value )
   Uint64.clz = function clz(value) {
-    if (!(value instanceof Uint64)) throw TypeError();
+    if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
     return clz64(value);
   };
 
