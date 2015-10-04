@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<script src="int64.js"></script>
+<script>
+function log(m) {
+  document.documentElement.appendChild(document.createElement('div'))
+          .appendChild(document.createTextNode(m));
+}
+
+function equal(a, b, m) {
+  if (a === b) return;
+  log((m ? (m + ' ====> ') : '') +
+      'Expected ' + String(a) + ' == ' + String(b));
+}
+
+function throws(f) {
+  try {
+    f();
+    log('Expected to throw, did not');
+  } catch (_) {}
+ }
+
+// NOTE: use of '.toNumber()' is non-standard
+
+// 7 Int64 Objects
+
+(function() {
+
+  function i64equal(a, b, m) {
+    if (Int64.compare(a, b) === 0) return;
+    log((m ? (m + ' ====> ') : '') +
+        'Expected i64 ' + a.toString(16) + ' == i64 ' + b.toString(16));
+  }
+
+  var cases = [0, 1, 1234, 0x12345678, 0xffffffff, 0x12345678abcd];
+  cases = cases.concat(cases.map(function(n) { return -n; }));
+
+  // 7.1 The Int64 constructor
+  // 7.1.1 Int64( [ value ] )
+
+  equal(new Int64().toNumber(), 0);
+  cases.forEach(function(n) {
+    equal(new Int64(n).toNumber(), n);
+  });
+  i64equal(new Int64(), Int64());
+  i64equal(new Int64(123), Int64(123));
+
+  // 7.2 Properties of the Int64 constructor
+
+  // 7.2.1 Int64.MAX_VALUE
+  equal(Int64.MAX_VALUE.toNumber(), 9223372036854775807);
+
+  // 7.2.2 Int64.MIN_VALUE
+  equal(Int64.MIN_VALUE.toNumber(), -9223372036854775808);
+
+  cases.forEach(function(a) {cases.forEach(function(b) {
+    // 7.2.3 Int64.add( a, b )
+    equal(Int64.add(new Int64(a), new Int64(b)).toNumber(), a + b, a + ' + ' + b);
+    // 7.2.4 Int64.sub( a, b )
+    equal(Int64.sub(new Int64(a), new Int64(b)).toNumber(), a - b, a + ' - ' + b);
+  });});
+  // TODO: add/sub overflow cases
+
+  var mulcases = [1, -1, 1234, -1234, 0x12345678, -0x12345678];
+  mulcases.forEach(function(a) { mulcases.forEach(function(b) {
+    // 7.2.5 Int64.mul( a, b )
+    equal(Int64.mul(new Int64(a), new Int64(b)).toNumber(), a * b, a + ' * ' + b);
+    // 7.2.6 Int64.div( a, b )
+    equal(Int64.div(new Int64(a), new Int64(b)).toNumber(), Math.trunc(a / b), a + ' / ' + b);
+    // 7.2.7 Int64.mod( a, b )
+    equal(Int64.mod(new Int64(a), new Int64(b)).toNumber(), Math.trunc(a % b), a + ' % ' + b);
+  });});
+  equal(Int64.mul(new Int64(0), new Int64(1)).toNumber(), 0);
+  equal(Int64.mul(new Int64(1), new Int64(0)).toNumber(), 0);
+  throws(function() { Int64.div(new Int64(0), new Int64(0)); });
+  throws(function() { Int64.div(new Int64(1), new Int64(0)); });
+  throws(function() { Int64.mod(new Int64(0), new Int64(0)); });
+  throws(function() { Int64.mod(new Int64(1), new Int64(0)); });
+  // TODO: mul/div/mod overflow cases
+
+  // 7.2.8 Int64.neg( a )
+  cases.forEach(function(a) {
+    equal(Int64.neg(new Int64(a)).toNumber(), -a);
+  });
+
+  var i0000 = Int64.combine(0x00000000, 0x00000000);
+  var i5555 = Int64.combine(0x55555555, 0x55555555);
+  var iAAAA = Int64.combine(0xAAAAAAAA, 0xAAAAAAAA);
+  var iFFFF = Int64.combine(0xFFFFFFFF, 0xFFFFFFFF);
+
+  // 7.2.9 Int64.not( a )
+  i64equal(i0000, Int64.not(iFFFF));
+  i64equal(iFFFF, Int64.not(i0000));
+  i64equal(i5555, Int64.not(iAAAA));
+  i64equal(iAAAA, Int64.not(i5555));
+
+  // 7.2.10 Int64.and( a, b )
+  i64equal(i0000, Int64.and(iAAAA, i5555));
+  i64equal(i5555, Int64.and(iFFFF, i5555));
+  i64equal(iAAAA, Int64.and(iFFFF, iAAAA));
+  i64equal(iFFFF, Int64.and(iFFFF, iFFFF));
+
+  // 7.2.11 Int64.or( a, b )
+  i64equal(i0000, Int64.or(i0000, i0000));
+  i64equal(iFFFF, Int64.or(iFFFF, i0000));
+  i64equal(iFFFF, Int64.or(iAAAA, i5555));
+  i64equal(iFFFF, Int64.or(iFFFF, i5555));
+
+  // 7.2.12 Int64.xor( a, b )
+  i64equal(i0000, Int64.xor(i0000, i0000));
+  i64equal(iFFFF, Int64.xor(iFFFF, i0000));
+  i64equal(iFFFF, Int64.xor(iAAAA, i5555));
+  i64equal(iAAAA, Int64.xor(iFFFF, i5555));
+
+  cases.forEach(function(a) {cases.forEach(function(b) {
+    // 7.2.13 Int64.greaterThan( a, b )
+    equal(Int64.greaterThan(new Int64(a), new Int64(b)), a > b, a + ' > ' + b);
+    // 7.2.14 Int64.lessThan( a, b )
+    equal(Int64.lessThan(new Int64(a), new Int64(b)), a < b, a + ' < ' + b);
+    // 7.2.15 Int64.greaterThanOrEqual( a, b )
+    equal(Int64.greaterThanOrEqual(new Int64(a), new Int64(b)), a >= b, a + ' >= ' + b);
+    // 7.2.16 Int64.lessThanOrEqual( a, b )
+    equal(Int64.lessThanOrEqual(new Int64(a), new Int64(b)), a <= b, a + ' <= ' + b);
+    // 7.2.17 Int64.compare( a, b )
+    equal(Int64.compare(new Int64(a), new Int64(b)), a < b ? -1 : a > b ? 1 : 0, a + ' <=> ' + b);
+  });});
+
+  // 7.2.18 Int64.min( values... )
+  equal(Int64.min.apply(null, cases.map(function(n) { return new Int64(n); })).toNumber(),
+        Math.min.apply(null, cases));
+
+  // 7.2.19 Int64.max( values... )
+  equal(Int64.max.apply(null, cases.map(function(n) { return new Int64(n); })).toNumber(),
+        Math.max.apply(null, cases));
+
+  // 7.2.20 Int64.abs( a )
+  cases.forEach(function(a) {
+    equal(Int64.abs(new Int64(a)).toNumber(), Math.abs(a));
+  });
+
+  // 7.2.21 Int64.combine( lo, hi )
+  equal(Int64.combine(0, 1).toNumber(), Math.pow(2, 32));
+  equal(Int64.combine(1, 0).toNumber(), 1);
+  equal(Int64.combine(0xFFFFFFFF, 0xFFFFFFFFFF).toNumber(), -1);
+  i64equal(Int64.combine(0xFFFFFFFF, 0x7FFFFFFF), Int64.MAX_VALUE);
+  i64equal(Int64.combine(0, 0x80000000), Int64.MIN_VALUE);
+
+  // 7.2.22 Int64.shiftLeft( value, shifter )
+  i64equal(Int64.combine(0xcdef0000, 0x345678ab),
+           Int64.shiftLeft(Int64.combine(0xabcdef00, 0x12345678), 8));
+  i64equal(iAAAA, Int64.shiftLeft(iAAAA, 0));
+  i64equal(i0000, Int64.shiftLeft(iAAAA, 63));
+  i64equal(Int64.MIN_VALUE, Int64.shiftLeft(i5555, 63));
+
+  // 7.2.23 Int64.shiftRightArithmetic( value, shifter )
+  i64equal(iFFFF, Int64.shiftRightArithmetic(iFFFF, 0));
+  i64equal(iFFFF, Int64.shiftRightArithmetic(iFFFF, 17));
+  i64equal(iFFFF, Int64.shiftRightArithmetic(iFFFF, 63));
+  i64equal(Int64.combine(0, -1), Int64.shiftRightArithmetic(Int64.MIN_VALUE, 31));
+  i64equal(Int64.combine(0x555555, 0), Int64.shiftRightArithmetic(i5555, 40));
+
+  // 7.3.1 Int64.prototype.valueOf()
+  // 7.3.2 Int64.prototype.toLocaleString( [ reserved1 [ , reserved2 ] ])
+  // 7.3.3 Int64.prototype.toString()
+
+  // TODO
+
+  // Base is non-standard
+  equal(new Int64(0).toString(16), '0');
+  equal(new Int64(1).toString(16), '1');
+  equal(new Int64(-1).toString(16), '-1');
+
+}());
+
+// 8 Uint64 Objects
+(function() {
+  function u64equal(a, b, m) {
+    if (Uint64.compare(a, b) === 0) return;
+    log((m ? (m + ' ====> ') : '') +
+        'Expected u64 ' + a.toString(16) + ' == u64 ' + b.toString(16));
+  }
+
+  var cases = [0, 1, 1234, 0x12345678, 0xffffffff, 0x12345678abcd];
+
+  // 8.1 The Uint64 constructor
+  // 8.1.1 Uint64( [ value ] )
+
+  equal(new Uint64().toNumber(), 0);
+  cases.forEach(function(n) {
+    equal(new Uint64(n).toNumber(), n);
+  });
+  u64equal(new Uint64(), Uint64());
+  u64equal(new Uint64(123), Uint64(123));
+
+  // 8.2 Properties of the Uint64 constructor
+  // 8.2.1 Uint64.MAX_VALUE
+  equal(Uint64.MAX_VALUE.toNumber(), 18446744073709551615);
+
+  // 8.2.2 Uint64.MIN_VALUE
+  equal(Uint64.MIN_VALUE.toNumber(), 0);
+
+  cases.forEach(function(a) {cases.forEach(function(b) {
+    // 8.2.3 Uint64.add( a, b )
+    equal(Uint64.add(new Uint64(a), new Uint64(b)).toNumber(), a + b, a + ' + ' + b);
+
+    if (a > b)
+      equal(Uint64.sub(new Uint64(a), new Uint64(b)).toNumber(), a - b, a + ' - ' + b);
+  });});
+  // TODO: add/sub overflow cases
+
+  var mulcases = [1, 1234, 0x12345678];
+  mulcases.forEach(function(a) { mulcases.forEach(function(b) {
+    equal(Uint64.mul(new Uint64(a), new Uint64(b)).toNumber(), a * b, a + ' * ' + b);
+    equal(Uint64.div(new Uint64(a), new Uint64(b)).toNumber(), Math.trunc(a / b), a + ' / ' + b);
+    equal(Uint64.mod(new Uint64(a), new Uint64(b)).toNumber(), Math.trunc(a % b), a + ' % ' + b);
+  });});
+  equal(Uint64.mul(new Uint64(0), new Uint64(1)).toNumber(), 0);
+  equal(Uint64.mul(new Uint64(1), new Uint64(0)).toNumber(), 0);
+  throws(function() { Uint64.div(new Uint64(0), new Uint64(0)); });
+  throws(function() { Uint64.div(new Uint64(1), new Uint64(0)); });
+  throws(function() { Uint64.mod(new Uint64(0), new Uint64(0)); });
+  throws(function() { Uint64.mod(new Uint64(1), new Uint64(0)); });
+  // TODO: mul/div/mod overflow cases
+
+  var u0000 = Uint64.combine(0x00000000, 0x00000000);
+  var u5555 = Uint64.combine(0x55555555, 0x55555555);
+  var uAAAA = Uint64.combine(0xAAAAAAAA, 0xAAAAAAAA);
+  var uFFFF = Uint64.combine(0xFFFFFFFF, 0xFFFFFFFF);
+
+  u64equal(u0000, Uint64.not(uFFFF));
+  u64equal(uFFFF, Uint64.not(u0000));
+  u64equal(u5555, Uint64.not(uAAAA));
+  u64equal(uAAAA, Uint64.not(u5555));
+
+  u64equal(u0000, Uint64.and(uAAAA, u5555));
+  u64equal(u5555, Uint64.and(uFFFF, u5555));
+  u64equal(uAAAA, Uint64.and(uFFFF, uAAAA));
+  u64equal(uFFFF, Uint64.and(uFFFF, uFFFF));
+
+  u64equal(u0000, Uint64.or(u0000, u0000));
+  u64equal(uFFFF, Uint64.or(uFFFF, u0000));
+  u64equal(uFFFF, Uint64.or(uAAAA, u5555));
+  u64equal(uFFFF, Uint64.or(uFFFF, u5555));
+
+  u64equal(u0000, Uint64.xor(u0000, u0000));
+  u64equal(uFFFF, Uint64.xor(uFFFF, u0000));
+  u64equal(uFFFF, Uint64.xor(uAAAA, u5555));
+  u64equal(uAAAA, Uint64.xor(uFFFF, u5555));
+
+  cases.forEach(function(a) {cases.forEach(function(b) {
+    equal(Uint64.greaterThan(new Uint64(a), new Uint64(b)), a > b, a + ' > ' + b);
+    equal(Uint64.lessThan(new Uint64(a), new Uint64(b)), a < b, a + ' < ' + b);
+    equal(Uint64.greaterThanOrEqual(new Uint64(a), new Uint64(b)), a >= b, a + ' >= ' + b);
+    equal(Uint64.lessThanOrEqual(new Uint64(a), new Uint64(b)), a <= b, a + ' <= ' + b);
+    equal(Uint64.compare(new Uint64(a), new Uint64(b)), a < b ? -1 : a > b ? 1 : 0, a + ' <=> ' + b);
+  });});
+
+  // 8.2.4 Uint64.min( values... )
+  equal(Uint64.min.apply(null, cases.map(function(n) { return new Uint64(n); })).toNumber(),
+        Math.min.apply(null, cases));
+
+  // 8.2.5 Uint64.max( values... )
+  equal(Uint64.max.apply(null, cases.map(function(n) { return new Uint64(n); })).toNumber(),
+        Math.max.apply(null, cases));
+
+  // 8.2.6 Uint64.combine( lo, hi )
+  equal(Uint64.combine(0, 1).toNumber(), Math.pow(2, 32));
+  equal(Uint64.combine(1, 0).toNumber(), 1);
+  u64equal(Uint64.combine(0xFFFFFFFF, 0xFFFFFFFF), Uint64.MAX_VALUE);
+  equal(Uint64.combine(0, 0x80000000).toNumber(), Math.pow(2, 63));
+
+  // 8.2.7 Uint64.shiftLeft( value, shifter )
+  u64equal(Uint64.combine(0xcdef0000, 0x345678ab),
+           Uint64.shiftLeft(Uint64.combine(0xabcdef00, 0x12345678), 8));
+  u64equal(uAAAA, Uint64.shiftLeft(uAAAA, 0));
+  u64equal(u0000, Uint64.shiftLeft(uAAAA, 63));
+  u64equal(Uint64.combine(0, 0x80000000), Uint64.shiftLeft(u5555, 63));
+
+  // 8.2.8 Uint64.shiftRightLogical( value, shifter )
+  u64equal(uFFFF, Uint64.shiftRightLogical(uFFFF, 0));
+  u64equal(Uint64.combine(0xFFFFFFFF, 0x00007FFF), Uint64.shiftRightLogical(uFFFF, 17));
+  u64equal(new Uint64(1), Uint64.shiftRightLogical(uFFFF, 63));
+  u64equal(Uint64.combine(0x555555, 0), Uint64.shiftRightLogical(u5555, 40));
+
+  // 8.2.9 Uint64.clz( value )
+  equal(Uint64.clz(Uint64.combine(0x00000000, 0x80000000)), 0);
+  equal(Uint64.clz(Uint64.combine(0x00000000, 0x7FF)), 21);
+  equal(Uint64.clz(Uint64.combine(0x00000000, 0)), 64);
+  equal(Uint64.clz(Uint64.combine(0x55555555, 0x00000000)), 33);
+  equal(Uint64.clz(Uint64.combine(0x00001234, 0x00000000)), 51);
+  equal(Uint64.clz(Uint64.combine(0x00000000, 0x00000000)), 64);
+
+  // 8.3 Properties of the Uint64 Prototype Object
+  // 8.3.1 Uint64.prototype.valueOf()
+  // 8.3.2 Uint64.prototype.toLocaleString( [ reserved1 [ , reserved2 ] ])
+  // 8.3.3 Uint64.prototype.toString()
+}());
+
+</script>
