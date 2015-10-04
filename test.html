@@ -19,8 +19,6 @@ function throws(f) {
   } catch (_) {}
  }
 
-// NOTE: use of '.toNumber()' is non-standard
-
 // 7 Int64 Objects
 
 (function() {
@@ -37,9 +35,9 @@ function throws(f) {
   // 7.1 The Int64 constructor
   // 7.1.1 Int64( [ value ] )
 
-  equal(new Int64().toNumber(), 0);
+  equal(Number(new Int64()), 0);
   cases.forEach(function(n) {
-    equal(new Int64(n).toNumber(), n);
+    equal(Number(new Int64(n)), n);
   });
   i64equal(new Int64(), Int64());
   i64equal(new Int64(123), Int64(123));
@@ -47,30 +45,30 @@ function throws(f) {
   // 7.2 Properties of the Int64 constructor
 
   // 7.2.1 Int64.MAX_VALUE
-  equal(Int64.MAX_VALUE.toNumber(), 9223372036854775807);
+  equal(Number(Int64.MAX_VALUE), 9223372036854775807);
 
   // 7.2.2 Int64.MIN_VALUE
-  equal(Int64.MIN_VALUE.toNumber(), -9223372036854775808);
+  equal(Number(Int64.MIN_VALUE), -9223372036854775808);
 
   cases.forEach(function(a) {cases.forEach(function(b) {
     // 7.2.3 Int64.add( a, b )
-    equal(Int64.add(new Int64(a), new Int64(b)).toNumber(), a + b, a + ' + ' + b);
+    equal(Number(Int64.add(new Int64(a), new Int64(b))), a + b, a + ' + ' + b);
     // 7.2.4 Int64.sub( a, b )
-    equal(Int64.sub(new Int64(a), new Int64(b)).toNumber(), a - b, a + ' - ' + b);
+    equal(Number(Int64.sub(new Int64(a), new Int64(b))), a - b, a + ' - ' + b);
   });});
   // TODO: add/sub overflow cases
 
   var mulcases = [1, -1, 1234, -1234, 0x12345678, -0x12345678];
   mulcases.forEach(function(a) { mulcases.forEach(function(b) {
     // 7.2.5 Int64.mul( a, b )
-    equal(Int64.mul(new Int64(a), new Int64(b)).toNumber(), a * b, a + ' * ' + b);
+    equal(Number(Int64.mul(new Int64(a), new Int64(b))), a * b, a + ' * ' + b);
     // 7.2.6 Int64.div( a, b )
-    equal(Int64.div(new Int64(a), new Int64(b)).toNumber(), Math.trunc(a / b), a + ' / ' + b);
+    equal(Number(Int64.div(new Int64(a), new Int64(b))), Math.trunc(a / b), a + ' / ' + b);
     // 7.2.7 Int64.mod( a, b )
-    equal(Int64.mod(new Int64(a), new Int64(b)).toNumber(), Math.trunc(a % b), a + ' % ' + b);
+    equal(Number(Int64.mod(new Int64(a), new Int64(b))), Math.trunc(a % b), a + ' % ' + b);
   });});
-  equal(Int64.mul(new Int64(0), new Int64(1)).toNumber(), 0);
-  equal(Int64.mul(new Int64(1), new Int64(0)).toNumber(), 0);
+  equal(Number(Int64.mul(new Int64(0), new Int64(1))), 0);
+  equal(Number(Int64.mul(new Int64(1), new Int64(0))), 0);
   throws(function() { Int64.div(new Int64(0), new Int64(0)); });
   throws(function() { Int64.div(new Int64(1), new Int64(0)); });
   throws(function() { Int64.mod(new Int64(0), new Int64(0)); });
@@ -79,7 +77,7 @@ function throws(f) {
 
   // 7.2.8 Int64.neg( a )
   cases.forEach(function(a) {
-    equal(Int64.neg(new Int64(a)).toNumber(), -a);
+    equal(Number(Int64.neg(new Int64(a))), -a);
   });
 
   var i0000 = Int64.combine(0x00000000, 0x00000000);
@@ -125,22 +123,22 @@ function throws(f) {
   });});
 
   // 7.2.18 Int64.min( values... )
-  equal(Int64.min.apply(null, cases.map(function(n) { return new Int64(n); })).toNumber(),
+  equal(Number(Int64.min.apply(null, cases.map(function(n) { return new Int64(n); }))),
         Math.min.apply(null, cases));
 
   // 7.2.19 Int64.max( values... )
-  equal(Int64.max.apply(null, cases.map(function(n) { return new Int64(n); })).toNumber(),
+  equal(Number(Int64.max.apply(null, cases.map(function(n) { return new Int64(n); }))),
         Math.max.apply(null, cases));
 
   // 7.2.20 Int64.abs( a )
   cases.forEach(function(a) {
-    equal(Int64.abs(new Int64(a)).toNumber(), Math.abs(a));
+    equal(Number(Int64.abs(new Int64(a))), Math.abs(a));
   });
 
   // 7.2.21 Int64.combine( lo, hi )
-  equal(Int64.combine(0, 1).toNumber(), Math.pow(2, 32));
-  equal(Int64.combine(1, 0).toNumber(), 1);
-  equal(Int64.combine(0xFFFFFFFF, 0xFFFFFFFFFF).toNumber(), -1);
+  equal(Number(Int64.combine(0, 1)), Math.pow(2, 32));
+  equal(Number(Int64.combine(1, 0)), 1);
+  equal(Number(Int64.combine(0xFFFFFFFF, 0xFFFFFFFFFF)), -1);
   i64equal(Int64.combine(0xFFFFFFFF, 0x7FFFFFFF), Int64.MAX_VALUE);
   i64equal(Int64.combine(0, 0x80000000), Int64.MIN_VALUE);
 
@@ -184,37 +182,37 @@ function throws(f) {
   // 8.1 The Uint64 constructor
   // 8.1.1 Uint64( [ value ] )
 
-  equal(new Uint64().toNumber(), 0);
+  equal(Number(new Uint64()), 0);
   cases.forEach(function(n) {
-    equal(new Uint64(n).toNumber(), n);
+    equal(Number(new Uint64(n)), n);
   });
   u64equal(new Uint64(), Uint64());
   u64equal(new Uint64(123), Uint64(123));
 
   // 8.2 Properties of the Uint64 constructor
   // 8.2.1 Uint64.MAX_VALUE
-  equal(Uint64.MAX_VALUE.toNumber(), 18446744073709551615);
+  equal(Number(Uint64.MAX_VALUE), 18446744073709551615);
 
   // 8.2.2 Uint64.MIN_VALUE
-  equal(Uint64.MIN_VALUE.toNumber(), 0);
+  equal(Number(Uint64.MIN_VALUE), 0);
 
   cases.forEach(function(a) {cases.forEach(function(b) {
     // 8.2.3 Uint64.add( a, b )
-    equal(Uint64.add(new Uint64(a), new Uint64(b)).toNumber(), a + b, a + ' + ' + b);
+    equal(Number(Uint64.add(new Uint64(a), new Uint64(b))), a + b, a + ' + ' + b);
 
     if (a > b)
-      equal(Uint64.sub(new Uint64(a), new Uint64(b)).toNumber(), a - b, a + ' - ' + b);
+      equal(Number(Uint64.sub(new Uint64(a), new Uint64(b))), a - b, a + ' - ' + b);
   });});
   // TODO: add/sub overflow cases
 
   var mulcases = [1, 1234, 0x12345678];
   mulcases.forEach(function(a) { mulcases.forEach(function(b) {
-    equal(Uint64.mul(new Uint64(a), new Uint64(b)).toNumber(), a * b, a + ' * ' + b);
-    equal(Uint64.div(new Uint64(a), new Uint64(b)).toNumber(), Math.trunc(a / b), a + ' / ' + b);
-    equal(Uint64.mod(new Uint64(a), new Uint64(b)).toNumber(), Math.trunc(a % b), a + ' % ' + b);
+    equal(Number(Uint64.mul(new Uint64(a), new Uint64(b))), a * b, a + ' * ' + b);
+    equal(Number(Uint64.div(new Uint64(a), new Uint64(b))), Math.trunc(a / b), a + ' / ' + b);
+    equal(Number(Uint64.mod(new Uint64(a), new Uint64(b))), Math.trunc(a % b), a + ' % ' + b);
   });});
-  equal(Uint64.mul(new Uint64(0), new Uint64(1)).toNumber(), 0);
-  equal(Uint64.mul(new Uint64(1), new Uint64(0)).toNumber(), 0);
+  equal(Number(Uint64.mul(new Uint64(0), new Uint64(1))), 0);
+  equal(Number(Uint64.mul(new Uint64(1), new Uint64(0))), 0);
   throws(function() { Uint64.div(new Uint64(0), new Uint64(0)); });
   throws(function() { Uint64.div(new Uint64(1), new Uint64(0)); });
   throws(function() { Uint64.mod(new Uint64(0), new Uint64(0)); });
@@ -255,18 +253,18 @@ function throws(f) {
   });});
 
   // 8.2.4 Uint64.min( values... )
-  equal(Uint64.min.apply(null, cases.map(function(n) { return new Uint64(n); })).toNumber(),
+  equal(Number(Uint64.min.apply(null, cases.map(function(n) { return new Uint64(n); }))),
         Math.min.apply(null, cases));
 
   // 8.2.5 Uint64.max( values... )
-  equal(Uint64.max.apply(null, cases.map(function(n) { return new Uint64(n); })).toNumber(),
+  equal(Number(Uint64.max.apply(null, cases.map(function(n) { return new Uint64(n); }))),
         Math.max.apply(null, cases));
 
   // 8.2.6 Uint64.combine( lo, hi )
-  equal(Uint64.combine(0, 1).toNumber(), Math.pow(2, 32));
-  equal(Uint64.combine(1, 0).toNumber(), 1);
+  equal(Number(Uint64.combine(0, 1)), Math.pow(2, 32));
+  equal(Number(Uint64.combine(1, 0)), 1);
   u64equal(Uint64.combine(0xFFFFFFFF, 0xFFFFFFFF), Uint64.MAX_VALUE);
-  equal(Uint64.combine(0, 0x80000000).toNumber(), Math.pow(2, 63));
+  equal(Number(Uint64.combine(0, 0x80000000)), Math.pow(2, 63));
 
   // 8.2.7 Uint64.shiftLeft( value, shifter )
   u64equal(Uint64.combine(0xcdef0000, 0x345678ab),

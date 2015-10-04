@@ -1,4 +1,6 @@
 (function(global) {
+  if ('Int64' in global || 'Uint64' in global)
+    return;
 
   var imul = Math.imul, abs = Math.abs, floor = Math.floor, pow = Math.pow;;
 
@@ -6,6 +8,18 @@
   var POW2_64 = pow(2, 64);
   var POW2_32 = pow(2, 32);
 
+  ////////////////////////////////////////////////////////////
+  //
+  // Helper Functions
+  //
+  ////////////////////////////////////////////////////////////
+
+  // These operate on objects with shape {lo, hi}
+  // and return similar objects (somtimes the input).
+  // i-prefix = inputs treated as signed
+  // u-prefix = inputs treated as unsigned (or n/a)
+
+  // signed compare; a < b => -1, a == b => 0, a > b => 1
   function icmp(a, b) {
     var a0 = a.lo >>> 0, a1 = a.hi | 0;
     var b0 = b.lo >>> 0, b1 = b.hi | 0;
@@ -16,6 +30,7 @@
     return 0;
   }
 
+  // unsigned compare; a < b => -1, a == b => 0, a > b => 1
   function ucmp(a, b) {
     var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
     var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
@@ -26,17 +41,21 @@
     return 0;
   }
 
-  function eq(a, b) {
+  // equality
+  function ueq(a, b) {
     return a.lo === b.lo && a.hi === b.hi;
   }
 
-  function clz64(a) {
+  // count leading zeros
+  function uclz(a) {
     return a.hi ? Math.clz32(a.hi) : Math.clz32(a.lo) + 32;
   }
 
-  function lt0(a) { return (a.hi|0) < 0; }
+  // less than zero?
+  function ilt0(a) { return (a.hi|0) < 0; }
 
-  function negate(n) {
+  // signed negate
+  function inegate(n) {
     var lo = n.lo >>> 0;
     var hi = n.hi >>> 0;
     var c0 = (-lo) >>> 0;
@@ -45,6 +64,7 @@
     return {lo:c0, hi:c1};
   };
 
+  // add
   function uadd(a, b) {
     var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
     var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
@@ -55,6 +75,7 @@
     return {lo: c0, hi: c1};
   }
 
+  // subtract
   function usub(a, b) {
     var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
     var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
@@ -65,50 +86,70 @@
     return {lo: c0, hi: c1};
   }
 
-  function shl(a) {
+  // shift left by one bit
+  function ushl(a) {
     return {lo: a.lo << 1, hi: a.hi << 1 | a.lo >>> 31};
   }
 
-  function shr(a) {
+  // shift left by n bits
+  function ushln(a, n) {
+    n = n % 64;
+    if (n === 0) return a;
+    if (n >= 32) return {lo: 0, hi: a.lo << n - 32};
+    return {lo: a.lo << n,
+            hi: (a.hi << n) | (a.lo >>> (32 - n))};
+  }
+
+  // shift right
+  function ushr(a) {
     return {lo: a.lo >> 1 | a.hi << 31, hi: a.hi >> 1};
   }
 
+  // bitwise or
   function uor(a, b) {
     return {lo: a.lo | b.lo, hi: a.hi | b.hi};
   }
 
+  // unsigned multiply
   function umul(a, b) {
     var c = uZERO;
     if (ucmp(a, b) < 0) { var tmp = a; a = b; b = tmp; }
 
-    while (!eq(b, uZERO)) {
+    while (!ueq(b, uZERO)) {
       if (b.lo & 1) c = uadd(c, a);
-      b = shr(b);
-      a = shl(a);
+      b = ushr(b);
+      a = ushl(a);
     }
     return c;
   }
 
+  // unsigned divide - returns {quotient:{lo,hi}, remainder:{lo,hi}}
   function udivrem(a, b) {
     switch(ucmp(a, b)) {
       case -1: return {quotient: uZERO, remainder: a};
       case 0:  return {quotient: uONE, remainder: uZERO};
     }
 
-    var shift = clz64(b) - clz64(a);
-    var divisor = Uint64.shiftLeft(b, shift);
+    var shift = uclz(b) - uclz(a);
+    var divisor = ushln(b, shift);
     var remainder = a, quotient = uZERO;
     while (shift-- >= 0) {
-      quotient = shl(quotient);
+      quotient = ushl(quotient);
       if (icmp(remainder, divisor) >= 0) {
         remainder = usub(remainder, divisor);
         quotient = uor(quotient, uONE);
       }
-      divisor = shr(divisor, 1);
+      divisor = ushr(divisor, 1);
     }
 
     return {quotient: quotient, remainder: remainder};
   }
+
+  ////////////////////////////////////////////////////////////
+  //
+  // Spec Implementation
+  //
+  ////////////////////////////////////////////////////////////
 
   // 2 Abstract Operations (7)
   // 2.1 Type Conversion (7.1)
@@ -129,13 +170,13 @@
       if (int >= POW2_63) int64bit -= POW2_64;
 
       if (int64bit < 0)
-        return negate({lo:-int64bit%POW2_32, hi:-int64bit/POW2_32});
+        return inegate({lo:-int64bit%POW2_32, hi:-int64bit/POW2_32});
       else
         return {lo:(int64bit%POW2_32)|0, hi:(int64bit/POW2_32)|0};
     }
     if (typeof arg === 'string') {
-      // TODO: handle string parsing
-      throw TypeError('NYI');
+      // TODO: do this without losing precision
+      return ToInt64(Number(arg));
     }
     throw TypeError();
   }
@@ -156,12 +197,27 @@
       return {lo:int64bit|0, hi:(int64bit/POW2_32)|0};
     }
     if (typeof arg === 'string') {
-      // TODO: handle string parsing
-      throw TypeError('NYI');
+      // TODO: do this without losing precision
+      return ToInt64(Number(arg));
     }
-
     throw TypeError();
   }
+
+  // 6 Numbers and Dates (20)
+  // 6.1 Number Objects (20.1)
+  // 6.1.1 The Number Constructor (20.1.1)
+  // 6.1.1.1 Number ( [ value ] ) (20.1.1.1)
+
+  (function() {
+    var orig = Number;
+    Number = function Number() {
+      // TODO: This doesn't handle Number-called-as-ctor.
+      if (arguments.length === 0) return 0;
+      if (arguments[0] instanceof Int64) return i64ToNumber(arguments[0]);
+      if (arguments[0] instanceof Uint64) return u64ToNumber(arguments[0]);
+      return orig.apply(this, arguments);
+    };
+  }());
 
   // 7 Int64 Objects
 
@@ -182,9 +238,19 @@
       var n = ToInt64(arguments[0]);
       this.lo = n.lo; this.hi = n.hi;
     }
-    Object.freeze(this);
+    return Object.freeze(this);
   }
+
   function makeInt64(lo, hi) { return new Int64(SECRET, lo, hi); }
+
+  function i64ToNumber(n) {
+    if (ueq(n, Int64.MIN_VALUE)) return -Math.pow(2,63);
+    if (ilt0(n)) {
+      n = inegate(n);
+      return -(((n.hi>>>0) * POW2_32) + (n.lo >>> 0));
+    }
+    return ((n.hi>>>0) * POW2_32) + (n.lo >>> 0);
+  }
 
   var iZERO = makeInt64(0, 0);
   var iONE = makeInt64(1, 0);
@@ -229,16 +295,16 @@
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
 
-    if (eq(a, iZERO) || eq(b, iZERO))
+    if (ueq(a, iZERO) || ueq(b, iZERO))
       return iZERO;
 
     // TODO: Handle MIN_VALUE which can't be negated
-    var an = lt0(a), bn = lt0(b);
+    var an = ilt0(a), bn = ilt0(b);
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
 
     var c = umul(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi));
-    if (an !== bn) c = negate(c);
+    if (an !== bn) c = inegate(c);
     return makeInt64(c.lo, c.hi);
   };
 
@@ -248,15 +314,16 @@
     if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
 
     // SPEC ISSUE: Definition for division by zero?
-    if (eq(b, iZERO)) throw RangeError('Division by zero');
+    // https://github.com/littledan/value-spec/issues/26
+    if (ueq(b, iZERO)) throw RangeError('Division by zero');
 
     // TODO: Handle MIN_VALUE which can't be negated
-    var an = lt0(a), bn = lt0(b);
+    var an = ilt0(a), bn = ilt0(b);
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
 
     var q = udivrem(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi)).quotient;
-    if (an !== bn) q = negate(q);
+    if (an !== bn) q = inegate(q);
     return makeInt64(q.lo, q.hi);
   };
 
@@ -266,15 +333,16 @@
     if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
 
     // SPEC ISSUE: Definition for division by zero?
-    if (eq(b, iZERO)) throw RangeError('Division by zero');
+    // https://github.com/littledan/value-spec/issues/26
+    if (ueq(b, iZERO)) throw RangeError('Division by zero');
 
     // TODO: Handle MIN_VALUE which can't be negated
-    var an = lt0(a), bn = lt0(b);
+    var an = ilt0(a), bn = ilt0(b);
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
 
     var r = udivrem(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi)).remainder;
-    if (an) r = negate(r);
+    if (an) r = inegate(r);
     return makeInt64(r.lo, r.hi);
   };
 
@@ -282,7 +350,7 @@
   Int64.neg = function neg(a) {
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (icmp(a, Int64.MIN_VALUE) === 0) return a;
-    var n = negate(a);
+    var n = inegate(a);
     return makeInt64(n.lo, n.hi);
   };
 
@@ -385,14 +453,8 @@
     var shiftValue = shifter >>> 0;
     var shiftCount = shifter % 64;
 
-    if (shiftCount === 0)
-      return value;
-
-    if (shiftCount >= 32)
-      return makeInt64(0, value.lo << shiftCount - 32);
-
-    return makeInt64(value.lo << shiftCount,
-                     (value.hi << shiftCount) | (value.lo >>> (32 - shiftCount)));
+    var c = ushln(value, shiftCount);
+    return makeInt64(c.lo, c.hi);
   };
 
   // 7.2.23 Int64.shiftRightArithmetic( value, shifter )
@@ -425,6 +487,7 @@
   // 7.3.3 Int64.prototype.toString()
 
   // SPEC ISSUE: Should take optional base?
+  // https://github.com/littledan/value-spec/issues/20
   Int64.prototype.toString = function toString() {
     // Non-standard
     var base = arguments.length > 0 ? Number(arguments[0]) : 10;
@@ -453,19 +516,7 @@
       return sign + s.replace(/^0+/, '') || '0';
     }
 
-    return this.toNumber().toString(base);
-  };
-
-  // Non-standard
-  Int64.prototype.toNumber = function toNumber() {
-    //console.warn('Losing precision');
-    var n = this;
-    if (eq(n, Int64.MIN_VALUE)) return -Math.pow(2,63);
-    if (lt0(n)) {
-      n = negate(n);
-      return -(((n.hi>>>0) * POW2_32) + (n.lo >>> 0));
-    }
-    return ((n.hi>>>0) * POW2_32) + (n.lo >>> 0);
+    return i64ToNumber(this).toString(base);
   };
 
 
@@ -485,9 +536,15 @@
       var n = ToUint64(arguments[0]);
       this.lo = n.lo; this.hi = n.hi;
     }
-    Object.freeze(this);
+    return Object.freeze(this);
   }
+
   function makeUint64(lo, hi) { return new Uint64(SECRET, lo, hi); }
+
+  function u64ToNumber(n) {
+    var hi = n.hi >>> 0, lo = n.lo >>> 0;
+    return hi * POW2_32 + lo;
+  }
 
   var uZERO = makeUint64(0, 0);
   var uONE = makeUint64(1, 0);
@@ -502,6 +559,7 @@
 
   // 8.2.2 Uint64.MIN_VALUE
   // SPEC ISSUE: "Int64.MIN_VALUE ... tagged as Int64."
+  // https://github.com/littledan/value-spec/issues/25
   Object.defineProperty(Uint64, 'MIN_VALUE', {
     value: makeUint64(0, 0),
     writable: false, enumerable: false, configurable: true
@@ -538,7 +596,8 @@
     if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
 
     // SPEC ISSUE: Definition for division by zero?
-    if (eq(b, iZERO)) throw RangeError('Division by zero');
+    // https://github.com/littledan/value-spec/issues/26
+    if (ueq(b, iZERO)) throw RangeError('Division by zero');
 
     var c = udivrem(a, b).quotient;
     return makeUint64(c.lo, c.hi);
@@ -549,13 +608,15 @@
     if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
 
     // SPEC ISSUE: Definition for division by zero?
-    if (eq(b, iZERO)) throw RangeError('Division by zero');
+    // https://github.com/littledan/value-spec/issues/26
+    if (ueq(b, iZERO)) throw RangeError('Division by zero');
 
     var c = udivrem(a, b).remainder;
     return makeUint64(c.lo, c.hi);
   };
 
   // SPEC ISSUE: neg doesn't make sense for Uint64
+  // https://github.com/littledan/value-spec/issues/27
 
   Uint64.not = function not(a) {
     if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
@@ -613,6 +674,7 @@
       if (ucmp(arguments[i], c) < 0) c = arguments[i];
     return c;
     // SPEC ISSUE: "return the largest Int64 value"
+    // https://github.com/littledan/value-spec/issues/25
   };
 
   // 8.2.5 Uint64.max( values... )
@@ -625,11 +687,13 @@
       if (ucmp(arguments[i], c) > 0) c = arguments[i];
     return c;
     // SPEC ISSUE: "return the smallest Int64 value"
+    // https://github.com/littledan/value-spec/issues/25
   };
 
   // 8.2.6 Uint64.combine( lo, hi )
   Uint64.combine = function combine(lo, hi) {
     // SPEC ISSUE: "Let hiValue be ToUint32(lo)."
+    // https://github.com/littledan/value-spec/issues/25
     return makeUint64(lo, hi);
   };
 
@@ -639,14 +703,8 @@
     var shiftValue = shifter >>> 0;
     var shiftCount = shifter % 64;
 
-    if (shiftCount === 0)
-      return value;
-
-    if (shiftCount >= 32)
-      return makeUint64(0, value.lo << shiftCount - 32);
-
-    return makeUint64(value.lo << shiftCount,
-                      (value.hi << shiftCount) | (value.lo >>> (32 - shiftCount)));
+    var c = ushln(value, shiftCount);
+    return makeUint64(c.lo, c.hi);
   };
 
   // 8.2.8 Uint64.shiftRightLogical( value, shifter )
@@ -668,7 +726,7 @@
   // 8.2.9 Uint64.clz( value )
   Uint64.clz = function clz(value) {
     if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
-    return clz64(value);
+    return uclz(value);
   };
 
   // 8.3 Properties of the Uint64 Prototype Object
@@ -684,6 +742,7 @@
   // 8.3.3 Uint64.prototype.toString()
 
   // SPEC ISSUE: Should take optional base?
+  // https://github.com/littledan/value-spec/issues/20
   Uint64.prototype.toString = function toString() {
     // Non-standard
     var base = arguments.length > 0 ? Number(arguments[0]) : 10;
@@ -705,17 +764,10 @@
       return s.replace(/^0+/, '') || '0';
     }
 
-    return this.toNumber().toString(base);
-  };
-
-  // Non-standard
-  Uint64.prototype.toNumber = function toNumber() {
-    //console.warn('Losing precision');
-    var hi = this.hi >>> 0, lo = this.lo >>> 0;
-    return hi * POW2_32 + lo;
+    return u64ToNumber(this).toString(base);
   };
 
   // Export
-  global.Int64 = global.Int64 || Int64;
-  global.Uint64 = global.Uint64 || Uint64;
+  global['Int64'] = Int64;
+  global['Uint64'] = Uint64;
 }(self));
