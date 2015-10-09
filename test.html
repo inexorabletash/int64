@@ -171,6 +171,12 @@ function throws(f, m) {
   i64equal(Int64.combine(0, -1), Int64.shiftRightArithmetic(Int64.MIN_VALUE, 31));
   i64equal(Int64.combine(0x555555, 0), Int64.shiftRightArithmetic(i5555, 40));
 
+  // TBD
+  equal(Int64.getLowBits(Int64.combine(1234, 5678)), 1234);
+  equal(Int64.getLowBits(Int64.combine(-1234, -5678)), -1234>>>0);
+  equal(Int64.getHighBits(Int64.combine(1234, 5678)), 5678);
+  equal(Int64.getHighBits(Int64.combine(-1234, -5678)), -5678>>>0);
+
   // 7.3.1 Int64.prototype.valueOf()
   // 7.3.2 Int64.prototype.toLocaleString( [ reserved1 [ , reserved2 ] ])
   // 7.3.3 Int64.prototype.toString()
@@ -301,6 +307,12 @@ function throws(f, m) {
   equal(Uint64.clz(Uint64.combine(0x55555555, 0x00000000)), 33);
   equal(Uint64.clz(Uint64.combine(0x00001234, 0x00000000)), 51);
   equal(Uint64.clz(Uint64.combine(0x00000000, 0x00000000)), 64);
+
+  // TBD
+  equal(Uint64.getLowBits(Uint64.combine(1234, 5678)), 1234);
+  equal(Uint64.getLowBits(Uint64.combine(-1234, -5678)), -1234>>>0);
+  equal(Uint64.getHighBits(Uint64.combine(1234, 5678)), 5678);
+  equal(Uint64.getHighBits(Uint64.combine(-1234, -5678)), -5678>>>0);
 
   // 8.3 Properties of the Uint64 Prototype Object
   // 8.3.1 Uint64.prototype.valueOf()

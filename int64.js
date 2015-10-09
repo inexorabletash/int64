@@ -473,6 +473,16 @@
                      value.hi >> shiftCount);
   };
 
+  // SPEC ISSUE: https://github.com/littledan/value-spec/issues/6
+  Int64.getLowBits = function getLowBits(value) {
+    if (!(value instanceof Int64)) throw TypeError(value + ' is not an Int64');
+    return value.lo >>> 0;
+  };
+  Int64.getHighBits = function getHighBits(value) {
+    if (!(value instanceof Int64)) throw TypeError(value + ' is not an Int64');
+    return value.hi >>> 0;
+  };
+
   // 7.3 Properties of the Int64 Prototype Object
 
   // 7.3.1 Int64.prototype.valueOf()
@@ -723,6 +733,16 @@
   Uint64.clz = function clz(value) {
     if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
     return uclz(value);
+  };
+
+  // SPEC ISSUE: https://github.com/littledan/value-spec/issues/6
+  Uint64.getLowBits = function getLowBits(value) {
+    if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
+    return value.lo >>> 0;
+  };
+  Uint64.getHighBits = function getHighBits(value) {
+    if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
+    return value.hi >>> 0;
   };
 
   // 8.3 Properties of the Uint64 Prototype Object
