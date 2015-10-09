@@ -58,12 +58,12 @@
   function ilt0(a) { return (a.hi|0) < 0; }
 
   // signed negate
-  function inegate(n) {
-    var lo = n.lo >>> 0;
-    var hi = n.hi >>> 0;
-    var c0 = (-lo) >>> 0;
-    var r = (lo | (~lo & c0)) >>> 31;
-    var c1 = (-hi - r)|0;
+  function inegate(a) {
+    var a0 = a.lo >>> 0;
+    var a1 = a.hi >>> 0;
+    var c0 = (-a0) >>> 0;
+    var r = (a0 | (~a0 & c0)) >>> 31;
+    var c1 = (-a1 - r)|0;
     return {lo:c0, hi:c1};
   };
 
@@ -507,21 +507,21 @@
       sign = '-';
     }
 
-    var s = '', n, lo = value.lo, hi = value.hi;
+    var s = '', n, v0 = value.lo, v1 = value.hi;
 
     if (base === 2) {
       for (n = 0; n < 32; ++n)
-        s = ((lo >> n) & 0x1).toString(base) + s;
+        s = ((v0 >> n) & 0x1).toString(base) + s;
       for (n = 0; n < 32; ++n)
-        s = ((hi >> n) & 0x1).toString(base) + s;
+        s = ((v1 >> n) & 0x1).toString(base) + s;
       return sign + s.replace(/^0+/, '') || '0';
     }
 
     if (base === 16) {
       for (n = 0; n < 32; n += 4)
-        s = ((lo >> n) & 0xF).toString(base) + s;;
+        s = ((v0 >> n) & 0xF).toString(base) + s;;
       for (n = 0; n < 32; n += 4)
-        s = ((hi >> n) & 0xF).toString(base) + s;
+        s = ((v1 >> n) & 0xF).toString(base) + s;
       return sign + s.replace(/^0+/, '') || '0';
     }
 
@@ -551,8 +551,7 @@
   function makeUint64(lo, hi) { return new Uint64(SECRET, lo, hi); }
 
   function u64ToNumber(n) {
-    var hi = n.hi >>> 0, lo = n.lo >>> 0;
-    return hi * POW2_32 + lo;
+    return (n.hi >>> 0) * POW2_32 + (n.lo >>> 0);
   }
 
   // 8.2 Properties of the Uint64 constructor
@@ -761,21 +760,21 @@
   Uint64.prototype.toString = function toString() {
     // Non-standard
     var base = arguments.length > 0 ? Number(arguments[0]) : 10;
-    var s = '', n, lo = this.lo, hi = this.hi;
+    var s = '', n, v0 = this.lo, v1 = this.hi;
 
     if (base === 2) {
       for (n = 0; n < 32; ++n)
-        s = ((lo >> n) & 0x1).toString(base) + s;
+        s = ((v0 >> n) & 0x1).toString(base) + s;
       for (n = 0; n < 32; ++n)
-        s = ((hi >> n) & 0x1).toString(base) + s;
+        s = ((v1 >> n) & 0x1).toString(base) + s;
       return s.replace(/^0+/, '') || '0';
     }
 
     if (base === 16) {
       for (n = 0; n < 32; n += 4)
-        s = ((lo >> n) & 0xF).toString(base) + s;;
+        s = ((v0 >> n) & 0xF).toString(base) + s;;
       for (n = 0; n < 32; n += 4)
-        s = ((hi >> n) & 0xF).toString(base) + s;
+        s = ((v1 >> n) & 0xF).toString(base) + s;
       return s.replace(/^0+/, '') || '0';
     }
 
