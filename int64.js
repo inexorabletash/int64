@@ -2,6 +2,9 @@
   if ('Int64' in global || 'Uint64' in global)
     return;
 
+  var lo = Symbol('lo');
+  var hi = Symbol('hi');
+
   var imul = Math.imul, abs = Math.abs, floor = Math.floor, pow = Math.pow;;
 
   var POW2_63 = pow(2, 63);
@@ -19,13 +22,13 @@
   // i-prefix = inputs treated as signed
   // u-prefix = inputs treated as unsigned (or n/a)
 
-  var uZERO = {lo: 0, hi: 0};
-  var uONE = {lo: 1, hi: 0};
+  var uZERO = {[lo]: 0, [hi]: 0};
+  var uONE = {[lo]: 1, [hi]: 0};
 
   // signed compare; a < b => -1, a == b => 0, a > b => 1
   function icmp(a, b) {
-    var a0 = a.lo >>> 0, a1 = a.hi | 0;
-    var b0 = b.lo >>> 0, b1 = b.hi | 0;
+    var a0 = a[lo] >>> 0, a1 = a[hi] | 0;
+    var b0 = b[lo] >>> 0, b1 = b[hi] | 0;
     if (a1 < b1) return -1;
     if (a1 > b1) return 1;
     if (a0 < b0) return -1;
@@ -35,8 +38,8 @@
 
   // unsigned compare; a < b => -1, a == b => 0, a > b => 1
   function ucmp(a, b) {
-    var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
-    var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
+    var a0 = a[lo] >>> 0, a1 = a[hi] >>> 0;
+    var b0 = b[lo] >>> 0, b1 = b[hi] >>> 0;
     if (a1 < b1) return -1;
     if (a1 > b1) return 1;
     if (a0 < b0) return -1;
@@ -46,71 +49,71 @@
 
   // equality
   function ueq(a, b) {
-    return a.lo === b.lo && a.hi === b.hi;
+    return a[lo] === b[lo] && a[hi] === b[hi];
   }
 
   // count leading zeros
   function uclz(a) {
-    return a.hi ? Math.clz32(a.hi) : Math.clz32(a.lo) + 32;
+    return a[hi] ? Math.clz32(a[hi]) : Math.clz32(a[lo]) + 32;
   }
 
   // less than zero?
-  function ilt0(a) { return (a.hi|0) < 0; }
+  function ilt0(a) { return (a[hi]|0) < 0; }
 
   // signed negate
-  function inegate(n) {
-    var lo = n.lo >>> 0;
-    var hi = n.hi >>> 0;
-    var c0 = (-lo) >>> 0;
-    var r = (lo | (~lo & c0)) >>> 31;
-    var c1 = (-hi - r)|0;
-    return {lo:c0, hi:c1};
+  function inegate(a) {
+    var a0 = a[lo] >>> 0;
+    var a1 = a[hi] >>> 0;
+    var c0 = (-a0) >>> 0;
+    var r = (a0 | (~a0 & c0)) >>> 31;
+    var c1 = (-a1 - r)|0;
+    return {[lo]:c0, [hi]:c1};
   };
 
   // add
   function uadd(a, b) {
-    var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
-    var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
+    var a0 = a[lo] >>> 0, a1 = a[hi] >>> 0;
+    var b0 = b[lo] >>> 0, b1 = b[hi] >>> 0;
 
     var c0 = (a0 + b0) >>> 0;
     var c = ((a0 & b0) | (a0 | b0) & ~c0) >>> 31;
     var c1 = (a1 + b1 + c) >>> 0;
-    return {lo: c0, hi: c1};
+    return {[lo]: c0, [hi]: c1};
   }
 
   // subtract
   function usub(a, b) {
-    var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
-    var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
+    var a0 = a[lo] >>> 0, a1 = a[hi] >>> 0;
+    var b0 = b[lo] >>> 0, b1 = b[hi] >>> 0;
 
     var c0 = (a0 - b0) >>> 0;
     var r = ((~a0 & b0) | (~(a0 ^ b0) & c0)) >>> 31;
     var c1 = (a1 - b1 - r)|0;
-    return {lo: c0, hi: c1};
+    return {[lo]: c0, [hi]: c1};
   }
 
   // shift left by one bit
   function ushl(a) {
-    return {lo: a.lo << 1, hi: a.hi << 1 | a.lo >>> 31};
+    return {[lo]: a[lo] << 1, [hi]: a[hi] << 1 | a[lo] >>> 31};
   }
 
   // shift left by n bits
   function ushln(a, n) {
     n = n % 64;
     if (n === 0) return a;
-    if (n >= 32) return {lo: 0, hi: a.lo << n - 32};
-    return {lo: a.lo << n,
-            hi: (a.hi << n) | (a.lo >>> (32 - n))};
+    if (n >= 32) return {[lo]: 0, [hi]: a[lo] << n - 32};
+    return {[lo]: a[lo] << n,
+            [hi]: (a[hi] << n) | (a[lo] >>> (32 - n))};
   }
 
   // shift right
   function ushr(a) {
-    return {lo: a.lo >> 1 | a.hi << 31, hi: a.hi >> 1};
+    return {[lo]: a[lo] >> 1 | a[hi] << 31, [hi]: a[hi] >> 1};
   }
 
   // bitwise or
   function uor(a, b) {
-    return {lo: a.lo | b.lo, hi: a.hi | b.hi};
+    return {[lo]: a[lo] | b[lo], [hi]: a[hi] | b[hi]};
   }
 
   // unsigned multiply
@@ -119,7 +122,7 @@
     if (ucmp(a, b) < 0) { var tmp = a; a = b; b = tmp; }
 
     while (!ueq(b, uZERO)) {
-      if (b.lo & 1) c = uadd(c, a);
+      if (b[lo] & 1) c = uadd(c, a);
       b = ushr(b);
       a = ushl(a);
     }
@@ -167,15 +170,15 @@
       arg = Number(arg);
     if (typeof arg === 'number') {
       if (arg === 0 || !isFinite(arg))
-        return {lo:0, hi:0};
+        return {[lo]:0, [hi]:0};
       var int = (arg < 0 ? -1 : 1) * floor(abs(arg));
       var int64bit = int % POW2_64;
       if (int >= POW2_63) int64bit -= POW2_64;
 
       if (int64bit < 0)
-        return inegate({lo:-int64bit%POW2_32, hi:-int64bit/POW2_32});
+        return inegate({[lo]:-int64bit%POW2_32, [hi]:-int64bit/POW2_32});
       else
-        return {lo:(int64bit%POW2_32)|0, hi:(int64bit/POW2_32)|0};
+        return {[lo]:(int64bit%POW2_32)|0, [hi]:(int64bit/POW2_32)|0};
     }
     if (typeof arg === 'string') {
       // TODO: do this without losing precision
@@ -194,10 +197,10 @@
       arg = Number(arg);
     if (typeof arg === 'number') {
       if (arg === 0 || !isFinite(arg))
-        return {lo:0, hi:0};
+        return {[lo]:0, [hi]:0};
       var int = (arg < 0 ? -1 : 1) * floor(abs(arg));
       var int64bit = int % POW2_64;
-      return {lo:int64bit|0, hi:(int64bit/POW2_32)|0};
+      return {[lo]:int64bit|0, [hi]:(int64bit/POW2_32)|0};
     }
     if (typeof arg === 'string') {
       // TODO: do this without losing precision
@@ -234,12 +237,12 @@
       return arguments.length === 0 ? new Int64() : new Int64(arguments[0]);
 
     if (arguments.length === 0) {
-      this.lo = 0; this.hi = 0;
+      this[lo] = 0; this[hi] = 0;
     } else if (arguments[0] === SECRET) {
-      this.lo = arguments[1]|0; this.hi = arguments[2]|0;
+      this[lo] = arguments[1]|0; this[hi] = arguments[2]|0;
     } else {
       var n = ToInt64(arguments[0]);
-      this.lo = n.lo; this.hi = n.hi;
+      this[lo] = n[lo]; this[hi] = n[hi];
     }
     return Object.freeze(this);
   }
@@ -250,9 +253,9 @@
     if (ueq(n, Int64.MIN_VALUE)) return -Math.pow(2,63);
     if (ilt0(n)) {
       n = inegate(n);
-      return -(((n.hi>>>0) * POW2_32) + (n.lo >>> 0));
+      return -(((n[hi]>>>0) * POW2_32) + (n[lo] >>> 0));
     }
-    return ((n.hi>>>0) * POW2_32) + (n.lo >>> 0);
+    return ((n[hi]>>>0) * POW2_32) + (n[lo] >>> 0);
   }
 
   // 7.2 Properties of the Int64 constructor
@@ -274,15 +277,15 @@
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
     var c = uadd(a, b);
-    return makeInt64(c.lo, c.hi);
+    return makeInt64(c[lo], c[hi]);
   };
 
   // 7.2.4 Int64.sub( a, b )
   Int64.sub = function sub(a, b) {
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (!(b instanceof Int64)) throw TypeError(b + ' is not an Int64');
-    var a0 = a.lo >>> 0, a1 = a.hi >>> 0;
-    var b0 = b.lo >>> 0, b1 = b.hi >>> 0;
+    var a0 = a[lo] >>> 0, a1 = a[hi] >>> 0;
+    var b0 = b[lo] >>> 0, b1 = b[hi] >>> 0;
 
     var c0 = (a0 - b0) >>> 0;
     var r = ((~a0 & b0) | (~(a0 ^ b0) & c0)) >>> 31;
@@ -303,9 +306,9 @@
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
 
-    var c = umul(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi));
+    var c = umul(makeUint64(a[lo], a[hi]), makeUint64(b[lo], b[hi]));
     if (an !== bn) c = inegate(c);
-    return makeInt64(c.lo, c.hi);
+    return makeInt64(c[lo], c[hi]);
   };
 
   // 7.2.6 Int64.div( a, b )
@@ -322,9 +325,9 @@
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
 
-    var q = udivrem(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi)).quotient;
+    var q = udivrem(makeUint64(a[lo], a[hi]), makeUint64(b[lo], b[hi])).quotient;
     if (an !== bn) q = inegate(q);
-    return makeInt64(q.lo, q.hi);
+    return makeInt64(q[lo], q[hi]);
   };
 
   // 7.2.7 Int64.mod( a, b )
@@ -341,9 +344,9 @@
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
 
-    var r = udivrem(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi)).remainder;
+    var r = udivrem(makeUint64(a[lo], a[hi]), makeUint64(b[lo], b[hi])).remainder;
     if (an) r = inegate(r);
-    return makeInt64(r.lo, r.hi);
+    return makeInt64(r[lo], r[hi]);
   };
 
   // 7.2.8 Int64.neg( a )
@@ -351,31 +354,31 @@
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
     if (icmp(a, Int64.MIN_VALUE) === 0) return a;
     var n = inegate(a);
-    return makeInt64(n.lo, n.hi);
+    return makeInt64(n[lo], n[hi]);
   };
 
   // 7.2.9 Int64.not( a )
   Int64.not = function not(a) {
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
-    return makeInt64(~a.lo, ~a.hi);
+    return makeInt64(~a[lo], ~a[hi]);
   };
 
   // 7.2.10 Int64.and( a, b )
   Int64.and = function and(a, b) {
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
-    return makeInt64(a.lo & b.lo, a.hi & b.hi);
+    return makeInt64(a[lo] & b[lo], a[hi] & b[hi]);
   };
 
   // 7.2.11 Int64.or( a, b )
   Int64.or = function or(a, b) {
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
-    return makeInt64(a.lo | b.lo, a.hi | b.hi);
+    return makeInt64(a[lo] | b[lo], a[hi] | b[hi]);
   };
 
   // 7.2.12 Int64.xor( a, b )
   Int64.xor = function xor(a, b) {
     if (!(a instanceof Int64)) throw TypeError(a + ' is not an Int64');
-    return makeInt64(a.lo ^ b.lo, a.hi ^ b.hi);
+    return makeInt64(a[lo] ^ b[lo], a[hi] ^ b[hi]);
   };
 
   // 7.2.13 Int64.greaterThan( a, b )
@@ -454,7 +457,7 @@
     var shiftCount = shifter % 64;
 
     var c = ushln(value, shiftCount);
-    return makeInt64(c.lo, c.hi);
+    return makeInt64(c[lo], c[hi]);
   };
 
   // 7.2.23 Int64.shiftRightArithmetic( value, shifter )
@@ -467,20 +470,20 @@
       return value;
 
     if (shiftCount >= 32)
-      return makeInt64(value.hi >> (shiftCount - 32), value.hi >> 31);
+      return makeInt64(value[hi] >> (shiftCount - 32), value[hi] >> 31);
 
-    return makeInt64((value.lo >>> shiftCount) | (value.hi << (32 - shiftCount)),
-                     value.hi >> shiftCount);
+    return makeInt64((value[lo] >>> shiftCount) | (value[hi] << (32 - shiftCount)),
+                     value[hi] >> shiftCount);
   };
 
   // SPEC ISSUE: https://github.com/littledan/value-spec/issues/6
   Int64.getLowBits = function getLowBits(value) {
     if (!(value instanceof Int64)) throw TypeError(value + ' is not an Int64');
-    return value.lo >>> 0;
+    return value[lo] >>> 0;
   };
   Int64.getHighBits = function getHighBits(value) {
     if (!(value instanceof Int64)) throw TypeError(value + ' is not an Int64');
-    return value.hi >>> 0;
+    return value[hi] >>> 0;
   };
 
   // 7.3 Properties of the Int64 Prototype Object
@@ -507,21 +510,21 @@
       sign = '-';
     }
 
-    var s = '', n, lo = value.lo, hi = value.hi;
+    var s = '', n, a0 = value[lo], a1 = value[hi];
 
     if (base === 2) {
       for (n = 0; n < 32; ++n)
-        s = ((lo >> n) & 0x1).toString(base) + s;
+        s = ((a0 >> n) & 0x1).toString(base) + s;
       for (n = 0; n < 32; ++n)
-        s = ((hi >> n) & 0x1).toString(base) + s;
+        s = ((a1 >> n) & 0x1).toString(base) + s;
       return sign + s.replace(/^0+/, '') || '0';
     }
 
     if (base === 16) {
       for (n = 0; n < 32; n += 4)
-        s = ((lo >> n) & 0xF).toString(base) + s;;
+        s = ((a0 >> n) & 0xF).toString(base) + s;;
       for (n = 0; n < 32; n += 4)
-        s = ((hi >> n) & 0xF).toString(base) + s;
+        s = ((a1 >> n) & 0xF).toString(base) + s;
       return sign + s.replace(/^0+/, '') || '0';
     }
 
@@ -538,21 +541,20 @@
       return arguments.length === 0 ? new Uint64() : new Uint64(arguments[0]);
 
     if (arguments.length === 0) {
-      this.lo = 0; this.hi = 0;
+      this[lo] = 0; this[hi] = 0;
     } else if (arguments[0] === SECRET) { // non-standard
-      this.lo = arguments[1] >>> 0; this.hi = arguments[2] >>> 0;
+      this[lo] = arguments[1] >>> 0; this[hi] = arguments[2] >>> 0;
     } else {
       var n = ToUint64(arguments[0]);
-      this.lo = n.lo; this.hi = n.hi;
+      this[lo] = n[lo]; this[hi] = n[hi];
     }
     return Object.freeze(this);
   }
 
   function makeUint64(lo, hi) { return new Uint64(SECRET, lo, hi); }
 
-  function u64ToNumber(n) {
-    var hi = n.hi >>> 0, lo = n.lo >>> 0;
-    return hi * POW2_32 + lo;
+  function u64ToNumber(a) {
+    return (a[hi] >>> 0) * POW2_32 + (a[lo] >>> 0);
   }
 
   // 8.2 Properties of the Uint64 constructor
@@ -576,7 +578,7 @@
     if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
     var c = uadd(a, b);
-    return makeUint64(c.lo, c.hi);
+    return makeUint64(c[lo], c[hi]);
   };
 
   // "Other function properties of Int64 are added analogously, through compare."
@@ -585,7 +587,7 @@
     if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
     if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
     var c = usub(a, b);
-    return makeUint64(c.lo, c.hi);
+    return makeUint64(c[lo], c[hi]);
   };
 
   // 7.2.5 Uint64.mul( a, b )
@@ -594,7 +596,7 @@
     if (!(b instanceof Uint64)) throw TypeError(b + ' is not an Uint64');
 
     var c = umul(a, b);
-    return makeUint64(c.lo, c.hi);
+    return makeUint64(c[lo], c[hi]);
   };
 
   Uint64.div = function div(a, b) {
@@ -606,7 +608,7 @@
     if (ueq(b, uZERO)) throw RangeError('Division by zero');
 
     var c = udivrem(a, b).quotient;
-    return makeUint64(c.lo, c.hi);
+    return makeUint64(c[lo], c[hi]);
   };
 
   Uint64.mod = function mod(a, b) {
@@ -618,7 +620,7 @@
     if (ueq(b, uZERO)) throw RangeError('Division by zero');
 
     var c = udivrem(a, b).remainder;
-    return makeUint64(c.lo, c.hi);
+    return makeUint64(c[lo], c[hi]);
   };
 
   // SPEC ISSUE: neg doesn't make sense for Uint64
@@ -626,22 +628,22 @@
 
   Uint64.not = function not(a) {
     if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
-    return makeUint64(~a.lo, ~a.hi);
+    return makeUint64(~a[lo], ~a[hi]);
   };
 
   Uint64.and = function and(a, b) {
     if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
-    return makeUint64(a.lo & b.lo, a.hi & b.hi);
+    return makeUint64(a[lo] & b[lo], a[hi] & b[hi]);
   };
 
   Uint64.or = function or(a, b) {
     if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
-    return makeUint64(a.lo | b.lo, a.hi | b.hi);
+    return makeUint64(a[lo] | b[lo], a[hi] | b[hi]);
   };
 
   Uint64.xor = function xor(a, b) {
     if (!(a instanceof Uint64)) throw TypeError(a + ' is not an Uint64');
-    return makeUint64(a.lo ^ b.lo, a.hi ^ b.hi);
+    return makeUint64(a[lo] ^ b[lo], a[hi] ^ b[hi]);
   };
 
   Uint64.greaterThan = function greaterThan(a, b) {
@@ -710,7 +712,7 @@
     var shiftCount = shifter % 64;
 
     var c = ushln(value, shiftCount);
-    return makeUint64(c.lo, c.hi);
+    return makeUint64(c[lo], c[hi]);
   };
 
   // 8.2.8 Uint64.shiftRightLogical( value, shifter )
@@ -723,10 +725,10 @@
       return value;
 
     if (shiftCount >= 32)
-      return makeUint64(value.hi >>> (shiftCount - 32), 0);
+      return makeUint64(value[hi] >>> (shiftCount - 32), 0);
 
-    return makeUint64((value.lo >>> shiftCount) | (value.hi << (32 - shiftCount)),
-                       value.hi >>> shiftCount);
+    return makeUint64((value[lo] >>> shiftCount) | (value[hi] << (32 - shiftCount)),
+                       value[hi] >>> shiftCount);
   };
 
   // 8.2.9 Uint64.clz( value )
@@ -738,11 +740,11 @@
   // SPEC ISSUE: https://github.com/littledan/value-spec/issues/6
   Uint64.getLowBits = function getLowBits(value) {
     if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
-    return value.lo >>> 0;
+    return value[lo] >>> 0;
   };
   Uint64.getHighBits = function getHighBits(value) {
     if (!(value instanceof Uint64)) throw TypeError(value + ' is not an Uint64');
-    return value.hi >>> 0;
+    return value[hi] >>> 0;
   };
 
   // 8.3 Properties of the Uint64 Prototype Object
@@ -761,21 +763,21 @@
   Uint64.prototype.toString = function toString() {
     // Non-standard
     var base = arguments.length > 0 ? Number(arguments[0]) : 10;
-    var s = '', n, lo = this.lo, hi = this.hi;
+    var s = '', n, a0 = this[lo], a1 = this[hi];
 
     if (base === 2) {
       for (n = 0; n < 32; ++n)
-        s = ((lo >> n) & 0x1).toString(base) + s;
+        s = ((a0 >> n) & 0x1).toString(base) + s;
       for (n = 0; n < 32; ++n)
-        s = ((hi >> n) & 0x1).toString(base) + s;
+        s = ((a1 >> n) & 0x1).toString(base) + s;
       return s.replace(/^0+/, '') || '0';
     }
 
     if (base === 16) {
       for (n = 0; n < 32; n += 4)
-        s = ((lo >> n) & 0xF).toString(base) + s;;
+        s = ((a0 >> n) & 0xF).toString(base) + s;;
       for (n = 0; n < 32; n += 4)
-        s = ((hi >> n) & 0xF).toString(base) + s;
+        s = ((a1 >> n) & 0xF).toString(base) + s;
       return s.replace(/^0+/, '') || '0';
     }
 
