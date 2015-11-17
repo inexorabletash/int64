@@ -88,6 +88,7 @@ function throws(f, m) {
   throws(function() { Int64.div(new Int64(1), new Int64(0)); }, 'division by zero');
   throws(function() { Int64.mod(new Int64(0), new Int64(0)); }, 'division by zero');
   throws(function() { Int64.mod(new Int64(1), new Int64(0)); }, 'division by zero');
+
   // TODO: mul/div/mod overflow cases
 
   // 7.2.8 Int64.neg( a )
@@ -188,6 +189,15 @@ function throws(f, m) {
   equal(new Int64(1).toString(16), '1');
   equal(new Int64(-1).toString(16), '-1');
 
+  // https://github.com/littledan/value-spec/issues/26
+  i64equal(Int64.div(Int64.MIN_VALUE, new Int64( 1)), Int64.MIN_VALUE);
+  i64equal(Int64.div(Int64.MIN_VALUE, new Int64(-1)), Int64.MIN_VALUE);
+
+  // Regression tests
+  i64equal(Int64.div(Int64.MIN_VALUE, new Int64( 2)), Int64.combine(0,0xc0000000));
+  i64equal(Int64.div(Int64.MIN_VALUE, new Int64(-2)), Int64.combine(0,0x40000000));
+  i64equal(Int64.div(Int64.MIN_VALUE, new Int64( 3)), Int64.combine(0x55555556, 0xd5555555)); //TODO: Off by one?
+  i64equal(Int64.div(Int64.MIN_VALUE, new Int64(-3)), Int64.combine(0xaaaaaaaa, 0x2aaaaaaa));
 }());
 
 // 8 Uint64 Objects

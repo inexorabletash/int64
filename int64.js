@@ -105,7 +105,7 @@
 
   // shift right
   function ushr(a) {
-    return {lo: a.lo >> 1 | a.hi << 31, hi: a.hi >> 1};
+    return {lo: a.lo >>> 1 | a.hi << 31, hi: a.hi >>> 1};
   }
 
   // bitwise or
@@ -138,11 +138,11 @@
     var remainder = a, quotient = uZERO;
     while (shift-- >= 0) {
       quotient = ushl(quotient);
-      if (icmp(remainder, divisor) >= 0) {
+      if (!ueq(remainder, uZERO) && ucmp(remainder, divisor) >= 0) {
         remainder = usub(remainder, divisor);
         quotient = uor(quotient, uONE);
       }
-      divisor = ushr(divisor, 1);
+      divisor = ushr(divisor);
     }
 
     return {quotient: quotient, remainder: remainder};
@@ -316,11 +316,14 @@
     // SPEC ISSUE: Definition for division by zero?
     // https://github.com/littledan/value-spec/issues/26
     if (ueq(b, uZERO)) throw RangeError('Division by zero');
+    if (ueq(b, uONE)) return a;
 
-    // TODO: Handle MIN_VALUE which can't be negated
     var an = ilt0(a), bn = ilt0(b);
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
+
+    // Handle MIN_VALUE which can't be negated
+    if (ueq(a, Int64.MIN_VALUE) && ueq(b, uONE)) return Int64.MIN_VALUE;
 
     var q = udivrem(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi)).quotient;
     if (an !== bn) q = inegate(q);
@@ -336,10 +339,12 @@
     // https://github.com/littledan/value-spec/issues/26
     if (ueq(b, uZERO)) throw RangeError('Division by zero');
 
-    // TODO: Handle MIN_VALUE which can't be negated
     var an = ilt0(a), bn = ilt0(b);
     if (an) a = Int64.neg(a);
     if (bn) b = Int64.neg(b);
+
+    // Handle MIN_VALUE which can't be negated
+    if (ueq(a, Int64.MIN_VALUE) && ueq(b, uONE)) return Int64.MIN_VALUE;
 
     var r = udivrem(makeUint64(a.lo, a.hi), makeUint64(b.lo, b.hi)).remainder;
     if (an) r = inegate(r);
